@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+mongoose.set("useFindAndModify", false);
 
 const url = process.env.MONGODB_URI;
 
@@ -27,6 +28,3 @@ personSchema.set("toJSON", {
 });
 
 const Person = (module.exports = mongoose.model("persons", personSchema));
-
-// Get all people
-module.exports.getAll = () => Person.find({});
