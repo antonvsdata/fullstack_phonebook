@@ -1,7 +1,9 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const morgan = require("morgan");
 const cors = require("cors");
+const Person = require("./models/person");
 
 app.use(express.json());
 morgan.token("body", (req, res) => {
@@ -17,48 +19,20 @@ app.use(
 app.use(cors());
 app.use(express.static("build"));
 
-let persons = [
-  {
-    name: "Arto Hellas",
-    number: "040-123456",
-    id: 1,
-  },
-  {
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-    id: 2,
-  },
-  {
-    name: "Dan Abramov",
-    number: "12-43-234345",
-    id: 3,
-  },
-  {
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-    id: 4,
-  },
-];
-
 app.get("/api/persons", (req, res) => {
-  res.json(persons);
+  Person.getAll().then((persons) => res.json(persons));
 });
 
 app.get("/api/persons/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const person = persons.filter((per) => per.id === id);
-  if (person.length) {
-    res.json(person[0]);
-  } else {
-    res.status(404).end();
-  }
+  Person.findById(req.params.id)
+    .then((person) => {
+      res.json(person);
+    })
+    .catch((err) => res.status(404).end());
 });
 
 app.delete("/api/persons/:id", (req, res) => {
-  const id = Number(req.params.id);
-  persons = persons.filter((p) => p.id !== id);
-
-  res.status(204).end();
+  Person.remove({ _id: req.params.id }).then((res) => res.status(204).end());
 });
 
 app.get("/info", (req, res) => {
@@ -69,15 +43,14 @@ app.get("/info", (req, res) => {
 });
 
 app.post("/api/persons", (req, res) => {
-  const person = { ...req.body };
+  const person = new Person({
+    ...req.body,
+    id: Math.round(Math.random() * 1e7),
+  });
+  // Name and number must be specified
   let errorMsg = "";
   if (!person.name) {
     errorMsg = errorMsg.concat("name is missing");
-  } else {
-    const names = persons.map((p) => p.name);
-    if (names.includes(person.name)) {
-      errorMsg = errorMsg.concat("name must be unique");
-    }
   }
   if (!person.number) {
     errorMsg = errorMsg.concat(", number is missing");
@@ -89,11 +62,7 @@ app.post("/api/persons", (req, res) => {
       error: errorMsg,
     });
   }
-
-  person.id = Math.round(Math.random() * 1e7);
-  persons = persons.concat(person);
-
-  res.json(person);
+  person.save().then((savedPerson) => res.json(savedPerson));
 });
 
 const PORT = process.env.PORT || 3001;
