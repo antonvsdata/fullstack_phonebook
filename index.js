@@ -20,7 +20,7 @@ app.use(cors());
 app.use(express.static("build"));
 
 // Get all persons
-app.get("/api/persons", (req, res) => {
+app.get("/api/persons", (req, res, next) => {
   Person.find({})
     .then((persons) => res.json(persons))
     .catch((error) => next(error));
@@ -40,7 +40,7 @@ app.get("/api/persons/:id", (req, res, next) => {
 });
 
 // Delete person
-app.delete("/api/persons/:id", (req, res) => {
+app.delete("/api/persons/:id", (req, res, next) => {
   Person.findByIdAndRemove(req.params.id)
     .then((result) => {
       res.status(204).end();
@@ -49,7 +49,7 @@ app.delete("/api/persons/:id", (req, res) => {
 });
 
 // Number of people in phonebook
-app.get("/info", (req, res) => {
+app.get("/info", (req, res, next) => {
   const curDate = new Date();
   const nPersons = Person.find({})
     .countDocuments()
@@ -61,26 +61,11 @@ app.get("/info", (req, res) => {
 });
 
 // Create new person
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
   const person = new Person({
     ...req.body,
     id: Math.round(Math.random() * 1e7),
   });
-  // Name and number must be specified
-  let errorMsg = "";
-  if (!person.name) {
-    errorMsg = errorMsg.concat("name is missing");
-  }
-  if (!person.number) {
-    errorMsg = errorMsg.concat(", number is missing");
-    console.log(errorMsg);
-  }
-  if (errorMsg !== "") {
-    console.log(errorMsg);
-    return res.status(400).json({
-      error: errorMsg,
-    });
-  }
   person
     .save()
     .then((savedPerson) => res.json(savedPerson))
@@ -96,7 +81,11 @@ app.put("/api/persons/:id", (req, res, next) => {
     number: body.number,
   };
 
-  Person.findByIdAndUpdate(req.params.id, person, { new: true })
+  Person.findByIdAndUpdate(req.params.id, person, {
+    new: true,
+    runValidators: true,
+    context: "query",
+  })
     .then((updatedPerson) => {
       res.json(updatedPerson);
     })
@@ -115,6 +104,8 @@ const errorHandler = (error, req, res, next) => {
 
   if (error.name === "CastError") {
     return res.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return res.status(400).json({ error: error.message });
   }
 
   next(error);

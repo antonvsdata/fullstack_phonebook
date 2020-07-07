@@ -54,11 +54,17 @@ const App = () => {
       }
       // Else a new entry is added
     } else {
-      personService.create(newPerson).then((addedPerson) => {
-        setPersons(persons.concat(addedPerson));
-        setMessage(`Added ${addedPerson.name} to phonebook`);
-        setTimeout(() => setMessage(null), 3000);
-      });
+      personService
+        .create(newPerson)
+        .then((addedPerson) => {
+          setPersons(persons.concat(addedPerson));
+          setMessage(`Added ${addedPerson.name} to phonebook`);
+          setTimeout(() => setMessage(null), 3000);
+        })
+        .catch((error) => {
+          setErrorMessage(error.response.data.error);
+          setTimeout(() => setErrorMessage(null), 3000);
+        });
     }
   };
 
