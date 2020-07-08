@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react'
 
 const Filter = ({ value, changer }) => {
   return (
@@ -6,7 +6,7 @@ const Filter = ({ value, changer }) => {
       <span>filter shown with </span>
       <input value={value} onChange={changer} />
     </div>
-  );
-};
+  )
+}
 
-export default Filter;
+export default Filter
